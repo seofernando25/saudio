@@ -1,5 +1,13 @@
 <script lang="ts">
-	import { playbackAction, playbackInfo, playbackSeekRequest } from '$lib/stores/playback';
+	import { browser } from '$app/environment';
+	import {
+		nowPlaying,
+		playbackAction,
+		playbackInfo,
+		playbackSeekRequest
+	} from '$lib/stores/playback';
+	import { onDestroy } from 'svelte';
+	import type { Unsubscriber } from 'svelte/store';
 
 	function formatString(duration: number) {
 		if (isNaN(duration)) return '00:00';
@@ -16,6 +24,23 @@
 
 	let dragging = false;
 	let sliderValue = 0;
+
+	let sliderSub = playbackInfo.subscribe((value) => {
+		if (dragging) return;
+		if (value.playing) {
+			sliderValue = value.elapsed;
+		}
+	});
+
+	let sliderResetSub = nowPlaying.subscribe((value) => {
+		console.log('Resetting slider');
+		sliderValue = 0;
+	});
+
+	onDestroy(() => {
+		sliderSub();
+		sliderResetSub();
+	});
 
 	function dragStart() {
 		dragging = true;

@@ -1,10 +1,5 @@
 <script lang="ts">
-	import {
-		Collections,
-		type BaseSystemFields,
-		type SongsRecord,
-		type SongsResponse
-	} from '$lib/db_types';
+	import { Collections, type SongsRecord, type SongsResponse } from '$lib/db_types';
 	import { pb } from '$lib/pb';
 	import { nowPlaying } from '$lib/stores/playback';
 	import { ProgressRadial } from '@skeletonlabs/skeleton';
@@ -13,7 +8,7 @@
 	import { get, writable, type Writable } from 'svelte/store';
 
 	onMount(async () => {
-		$tracks = (await fetch(`api/search/deltarune`).then((res) => res.json())).tracks;
+		$tracks = (await fetch(`api/search/runescape`).then((res) => res.json())).tracks;
 	});
 
 	let audioSrc = '';

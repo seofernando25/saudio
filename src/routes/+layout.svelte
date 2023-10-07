@@ -13,7 +13,18 @@
 	import NowPlayingInfo from '$lib/components/NowPlayingBar/NowPlayingInfo.svelte';
 	import PlayerControls from '$lib/components/NowPlayingBar/PlayerControls.svelte';
 
+	import { pwaInfo } from 'virtual:pwa-info';
+	import { browser } from '$app/environment';
+	import { onMount, tick } from 'svelte';
+
+	$: webManifestLink = pwaInfo ? pwaInfo.webManifest.linkTag : '';
+
 	let audioEl: HTMLAudioElement;
+	let playFunc = () => {};
+
+	onMount(() => {
+		playFunc = audioEl.play.bind(audioEl);
+	});
 
 	let duration = 0;
 	function updateAudio(e: Event & { currentTarget: EventTarget & HTMLAudioElement }) {
@@ -24,7 +35,7 @@
 		if ('play' in e.target) {
 			const playPromise = e.target.play;
 			if (typeof playPromise === 'function') {
-				playPromise();
+				playFunc();
 			}
 		}
 	}
@@ -63,6 +74,10 @@
 	});
 </script>
 
+<svelte:head>
+	{@html webManifestLink}
+</svelte:head>
+
 <audio
 	bind:volume={$volume}
 	bind:this={audioEl}
@@ -82,6 +97,12 @@
 		<AppBar>
 			<svelte:fragment slot="headline">
 				<h1 class="h1">SAUDIO</h1>
+
+				<!-- Links for /home and /offline  -->
+				<nav>
+					<a href="/" class="btn variant-filled">Home</a>
+					<a href="/offline" class="btn variant-filled">Offline</a>
+				</nav>
 			</svelte:fragment>
 		</AppBar>
 	</svelte:fragment>

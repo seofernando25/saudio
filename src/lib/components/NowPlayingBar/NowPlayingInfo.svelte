@@ -3,11 +3,11 @@
 </script>
 
 <div class="flex gap-4 flex-1 items-center">
-	<div class="w-16 h-16 grid place-items-center">
+	<div class="w-16 h-16 grid place-items-center aspect-square">
 		<img
 			src={$nowPlaying?.art}
 			alt={$nowPlaying?.album}
-			class="text-center w-16 h-16 rounded-sm bg-surface-400"
+			class="text-center w-16 h-16 rounded-sm bg-surface-400 aspect-square"
 		/>
 	</div>
 	{#if $nowPlaying}
