@@ -3,7 +3,7 @@
 	"version": "0.0.1",
 	"private": true,
 	"scripts": {
-		"dev": "vite dev --host",
+		"dev": "vite dev --host 0.0.0.0 --port 2500",
 		"build": "vite build",
 		"preview": "vite preview",
 		"test": "npm run test:integration && npm run test:unit",
@@ -13,7 +13,7 @@
 		"format": "prettier --plugin-search-dir . --write .",
 		"test:integration": "playwright test",
 		"test:unit": "vitest",
-		"gentypes": "npx pocketbase-typegen --db ./pb/pb_data/data.db -o ./src/lib/db_types.ts"
+		"typegen": "npx pocketbase-typegen --db ./pb/pb_data/data.db -o ./src/lib/db_types.ts"
 	},
 	"devDependencies": {
 		"@fortawesome/fontawesome-free": "^6.4.2",
@@ -33,6 +33,7 @@
 		"eslint-config-prettier": "^8.5.0",
 		"eslint-plugin-svelte": "^2.30.0",
 		"jsdom": "^22.1.0",
+		"playwright": "^1.38.1",
 		"pocketbase": "^0.18.0",
 		"postcss": "^8.4.24",
 		"postcss-load-config": "^4.0.1",

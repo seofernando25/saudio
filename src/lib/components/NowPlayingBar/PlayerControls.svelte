@@ -1,13 +1,11 @@
 <script lang="ts">
-	import { browser } from '$app/environment';
 	import {
 		nowPlaying,
 		playbackAction,
 		playbackInfo,
 		playbackSeekRequest
 	} from '$lib/stores/playback';
-	import { onDestroy } from 'svelte';
-	import type { Unsubscriber } from 'svelte/store';
+	import { onDestroy, onMount } from 'svelte';
 
 	function formatString(duration: number) {
 		if (isNaN(duration)) return '00:00';
@@ -33,8 +31,11 @@
 	});
 
 	let sliderResetSub = nowPlaying.subscribe((value) => {
-		console.log('Resetting slider');
 		sliderValue = 0;
+	});
+
+	onMount(() => {
+		sliderValue = $playbackInfo.elapsed;
 	});
 
 	onDestroy(() => {
@@ -63,7 +64,7 @@
 	$: durationFormatted = formatString($playbackInfo.duration ?? 0);
 </script>
 
-<div class="flex flex-col flex-1 items-center justify-center gap-4">
+<div class=" m-auto h-min flex flex-col flex-1 items-center justify-center gap-0 sm:gap-4">
 	<div class="flex gap-4">
 		<button class="btn-icon variant-ghost-primary">
 			<i class="fas fa-step-backward" />

@@ -1,6 +1,6 @@
 
 const env = {
-  PB_PORT: 8090,
+  PB_PORT: 2509,
 }
 
 module.exports = {

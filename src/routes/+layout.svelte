@@ -1,12 +1,13 @@
 <script lang="ts">
 	import '../app.postcss';
 	import '@fortawesome/fontawesome-free/css/all.min.css';
-	import { AppBar, AppShell } from '@skeletonlabs/skeleton';
+	import { AppShell, TabAnchor, TabGroup } from '@skeletonlabs/skeleton';
 	import {
 		playbackAction,
 		playbackInfo,
 		playbackSeekRequest,
 		songSrc,
+		togglePlayback,
 		volume
 	} from '$lib/stores/playback';
 	import VolumeSlider from '$lib/components/NowPlayingBar/VolumeSlider.svelte';
@@ -15,27 +16,32 @@
 
 	import { pwaInfo } from 'virtual:pwa-info';
 	import { browser } from '$app/environment';
-	import { onMount, tick } from 'svelte';
+	import { onMount } from 'svelte';
+	import { AppRail, AppRailAnchor } from '@skeletonlabs/skeleton';
+	import { page } from '$app/stores';
+	import type { LayoutData } from './$types';
 
 	$: webManifestLink = pwaInfo ? pwaInfo.webManifest.linkTag : '';
 
+	let currentTile: number = 0;
 	let audioEl: HTMLAudioElement;
 	let playFunc = () => {};
+	export let data: LayoutData;
 
 	onMount(() => {
 		playFunc = audioEl.play.bind(audioEl);
+		playbackSeekRequest.set($playbackInfo.elapsed);
 	});
 
-	let duration = 0;
 	function updateAudio(e: Event & { currentTarget: EventTarget & HTMLAudioElement }) {
+		// alert('play');
 		if (!e.target) return;
-		if ('duration' in e.target) {
-			duration = e.target?.duration as number;
-		}
 		if ('play' in e.target) {
 			const playPromise = e.target.play;
+
 			if (typeof playPromise === 'function') {
 				playFunc();
+				$playbackInfo.playing = true;
 			}
 		}
 	}
@@ -56,12 +62,15 @@
 		switch (value.e) {
 			case 'play':
 				audioEl.play();
+				$playbackInfo.playing = true;
 				break;
 			case 'pause':
 				audioEl.pause();
+				$playbackInfo.playing = false;
 				break;
 			case 'stop':
 				audioEl.pause();
+				$playbackInfo.playing = false;
 				audioEl.currentTime = 0;
 				break;
 			case 'next':
@@ -72,6 +81,21 @@
 				break;
 		}
 	});
+
+	// Call audioload after $songSrc
+	$: if ($songSrc && browser) {
+		audioEl?.load();
+	}
+
+	if (browser) {
+		// Hook to the spacebar to play/pause
+		// window.addEventListener('keydown', (e) => {
+		// 	if (e.code === 'Space') {
+		// 		togglePlayback();
+		// 	}
+		// });
+		// alert('browser');
+	}
 </script>
 
 <svelte:head>
@@ -93,28 +117,88 @@
 />
 
 <AppShell scrollbarGutter="auto">
-	<svelte:fragment slot="header">
-		<AppBar>
-			<svelte:fragment slot="headline">
-				<h1 class="h1">SAUDIO</h1>
+	<svelte:fragment slot="sidebarLeft">
+		<AppRail class="hidden sm:block">
+			<AppRailAnchor
+				bind:group={currentTile}
+				name="home"
+				value={0}
+				href="/"
+				selected={$page.url.pathname === '/'}
+			>
+				<svelte:fragment slot="lead">
+					<i class="fas fa-home" />
+				</svelte:fragment>
+				<span>Home</span>
+			</AppRailAnchor>
 
-				<!-- Links for /home and /offline  -->
-				<nav>
-					<a href="/" class="btn variant-filled">Home</a>
-					<a href="/offline" class="btn variant-filled">Offline</a>
-				</nav>
-			</svelte:fragment>
-		</AppBar>
+			<!-- selected={$page.url.pathname. '/results'} -->
+			<AppRailAnchor
+				bind:group={currentTile}
+				name="search"
+				value={1}
+				href="/results/"
+				selected={$page.url.pathname.includes('/results')}
+			>
+				<svelte:fragment slot="lead">
+					<i class="fas fa-search" />
+				</svelte:fragment>
+				<span>Search</span>
+			</AppRailAnchor>
+		</AppRail>
 	</svelte:fragment>
+
 	<slot />
 
+	<!-- --- -->
+	<!-- <AppRailTile bind:group={currentTile} name="tile-1" value={0} title="tile-1">
+		<svelte:fragment slot="lead">(icon)</svelte:fragment>
+		<span>Tile 1</span>
+	</AppRailTile>
+	<AppRailTile bind:group={currentTile} name="tile-2" value={1} title="tile-2">
+		<svelte:fragment slot="lead">(icon)</svelte:fragment>
+		<span>Tile 2</span>
+	</AppRailTile>
+	<AppRailTile bind:group={currentTile} name="tile-3" value={2} title="tile-3">
+		<svelte:fragment slot="lead">(icon)</svelte:fragment>
+		<span>Tile 3</span>
+	</AppRailTile> -->
+	<!-- --- -->
+	<!-- <svelte:fragment slot="trail">
+		<AppRailAnchor href="/" target="_blank" title="Account">(icon)</AppRailAnchor>
+	</svelte:fragment> -->
+
 	<svelte:fragment slot="footer">
-		<div class="flex w-full h-28 gap-4 px-4">
-			<NowPlayingInfo />
+		<div class="flex w-full px-4 gap-2 sm:gap-4 p-2">
+			<div class="hidden sm:flex flex-1">
+				<NowPlayingInfo />
+			</div>
 			<PlayerControls />
-			<div class="flex-1 flex flex-col items-end justify-center gap-4">
+			<div class="hidden sm:flex flex-1 flex-col items-end justify-center gap-4">
 				<VolumeSlider />
 			</div>
 		</div>
+
+		<TabGroup
+			hover="hover:variant-soft-primary"
+			flex="flex-1 lg:flex-none"
+			rounded=""
+			border=""
+			class="pb-4 visible sm:hidden "
+		>
+			<TabAnchor href="/" selected={$page.url.pathname === '/'}>
+				<svelte:fragment slot="lead">
+					<i class="fas fa-home" />
+				</svelte:fragment>
+				<span>Home</span>
+			</TabAnchor>
+			<TabAnchor href="/results" selected={$page.url.pathname.includes('/results')}>
+				<svelte:fragment slot="lead">
+					<i class="fas fa-search" />
+				</svelte:fragment>
+				<span>Search</span>
+			</TabAnchor>
+			<!-- ... -->
+		</TabGroup>
 	</svelte:fragment>
 </AppShell>

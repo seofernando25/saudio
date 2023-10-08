@@ -3,6 +3,7 @@
 */
 
 export enum Collections {
+	Downloads = "downloads",
 	Songs = "songs",
 	Users = "users",
 }
@@ -31,13 +32,17 @@ export type AuthSystemFields<T = never> = {
 
 // Record types for each collection
 
+export type DownloadsRecord = {
+	blob?: string
+	url?: string
+}
+
 export type SongsRecord = {
 	album?: string
 	art?: string
 	artist?: string
-	audio?: string
-	isDownloading?: boolean
 	name?: string
+	url?: string
 }
 
 export type UsersRecord = {
@@ -46,17 +51,20 @@ export type UsersRecord = {
 }
 
 // Response types include system fields and match responses from the PocketBase API
+export type DownloadsResponse<Texpand = unknown> = Required<DownloadsRecord> & BaseSystemFields<Texpand>
 export type SongsResponse<Texpand = unknown> = Required<SongsRecord> & BaseSystemFields<Texpand>
 export type UsersResponse<Texpand = unknown> = Required<UsersRecord> & AuthSystemFields<Texpand>
 
 // Types containing all Records and Responses, useful for creating typing helper functions
 
 export type CollectionRecords = {
+	downloads: DownloadsRecord
 	songs: SongsRecord
 	users: UsersRecord
 }
 
 export type CollectionResponses = {
+	downloads: DownloadsResponse
 	songs: SongsResponse
 	users: UsersResponse
 }

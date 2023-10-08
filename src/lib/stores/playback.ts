@@ -1,12 +1,12 @@
 import type { SongsRecord } from '$lib/db_types';
-import { pb } from '$lib/pb';
+import { localStorageStore } from '@skeletonlabs/skeleton';
 import { derived, writable } from 'svelte/store';
 
-export const nowPlaying = writable<null | SongsRecord>(null);
+export const nowPlaying = localStorageStore<null | SongsRecord>('nowPlaying', null);
 
-export const volume = writable(1);
+export const volume = localStorageStore('volume', 1);
 
-export const playbackInfo = writable({
+export const playbackInfo = localStorageStore('playbackInfo', {
 	playing: false,
 	elapsed: 0,
 	duration: 0
@@ -19,6 +19,17 @@ export const playbackSeekRequest = writable(0);
 
 export const songSrc = derived(nowPlaying, ($nowPlaying) => {
 	if (!$nowPlaying) return null;
-	if (!$nowPlaying.audio) return null;
-	return pb.files.getUrl($nowPlaying, $nowPlaying.audio);
+	if (!$nowPlaying.url) return null;
+	const src = window.location.origin + '/api/song/' + encodeURIComponent($nowPlaying.url);
+	return src;
 });
+
+export function togglePlayback() {
+	playbackAction.update((action) => {
+		if (action.e === 'play') {
+			return { e: 'pause' };
+		} else {
+			return { e: 'play' };
+		}
+	});
+}

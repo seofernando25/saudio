@@ -1,72 +1,31 @@
-import { Collections, type SongsResponse } from '$lib/db_types.js';
+import type { SongsRecord } from '$lib/db_types';
 import { pb } from '$lib/pb.js';
 import { BandCrawler } from '$lib/server/BandCrawler';
-import { stringHash } from '$lib/utils';
+import { YoutuCrawler } from '$lib/server/YoutuCrawler';
 import { json } from '@sveltejs/kit';
-import { downloadAndConvert } from '$lib/server/scrapper';
+
+const cache = new Map<string, SongsRecord[]>();
 
 export async function GET({ params }) {
-	const scrapper = new BandCrawler();
-	const results = await scrapper.searchTracks(params.query);
+	await pb.admins.authWithPassword('admin@admin.com', 'admin');
 
-	const downloadJobs = [];
-
-	for (const track of results.tracks) {
-		// Check if track exists in DB
-		let songRes: SongsResponse;
-		try {
-			const escapedTrackName = track.track.replace(/"/g, '\\"');
-			songRes = await pb
-				.collection(Collections.Songs)
-				.getFirstListItem(`name = "${escapedTrackName}"`);
-		} catch (e) {
-			console.log('Song not found in DB, creating new entry', track.track);
-			const requestKey = track.track + track.artist;
-			const requestKeyHash = stringHash(requestKey);
-			songRes = await pb.collection(Collections.Songs).create<SongsResponse>(
-				{
-					name: track.track,
-					artist: track.artist,
-					album: track.album,
-					art: track.art,
-					isDownloading: true
-				},
-				{
-					requestKey: requestKeyHash.toString()
-				}
-			);
-
-			downloadJobs.push(
-				downloadAndConvert(track.url).then(async (audio) => {
-					console.log('Downloaded audio for', track.track);
-					console.log('Size:', audio.size);
-
-					if (audio.size === 0) {
-						console.log('Audio size is 0, skipping');
-						await pb.collection(Collections.Songs).update<SongsResponse>(songRes.id, {
-							isDownloading: false
-						});
-						return;
-					}
-
-					await pb.collection(Collections.Songs).update<SongsResponse>(songRes.id, {
-						audio: audio,
-						isDownloading: false
-					});
-				})
-			);
-		}
+	if (cache.has(params.query)) {
+		console.log('Found cached results for', params.query);
+		return json({
+			tracks: cache.get(params.query)
+		});
 	}
 
-	// SongsRecord[]
-	const safeQuery = params.query.replace(/"/g, '\\"');
-	const records = await pb.collection(Collections.Songs).getFullList({
-		filter: `name ~ "${safeQuery}" || album ~ "${safeQuery}" || artist ~ "${safeQuery}"`
-	});
+	const bandcamp = new BandCrawler();
+	const youtube = new YoutuCrawler();
+	const bandcampResults = bandcamp.searchTracks(params.query);
+	const youtubeResults = youtube.searchTracks(params.query);
 
-	console.log('Returning results');
+	const results = await Promise.all([bandcampResults, youtubeResults]);
+	const flattenedResults = results.flat().reverse();
+
+	cache.set(params.query, flattenedResults);
 	return json({
-		tracks: records,
-		lastPageNumber: results.lastPageNumber
+		tracks: flattenedResults
 	});
 }

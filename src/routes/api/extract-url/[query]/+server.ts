@@ -28,7 +28,6 @@ export async function GET({ params }) {
 		}
 		done = true;
 	});
-
 	return new Promise((resolve) => {
 		const interval = setInterval(() => {
 			if (done) {

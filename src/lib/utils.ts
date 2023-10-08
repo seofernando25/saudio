@@ -1,9 +1,6 @@
-export function stringHash(str: string) {
-	let hash = 0;
-	for (let i = 0; i < str.length; i++) {
-		const char = str.charCodeAt(i);
-		hash = (hash << 5) - hash + char;
-		hash |= 0;
-	}
-	return hash;
+import { createHash } from 'crypto';
+
+export function stringHash(str: string): string {
+	const result = createHash('md5').update(str).digest('hex');
+	return result;
 }

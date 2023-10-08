@@ -54,5 +54,13 @@ export default defineConfig({
 	],
 	test: {
 		include: ['src/**/*.{test,spec}.{js,ts}']
+	},
+	server: {
+		proxy: {
+			'/api/pb': {
+				target: 'http://localhost:2509',
+				rewrite: (path) => path.replace(/^\/api\/pb/, '')
+			}
+		}
 	}
 });

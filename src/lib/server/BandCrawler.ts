@@ -1,25 +1,21 @@
+import type { SongsRecord } from '$lib/db_types';
 import assert from 'assert';
 import { JSDOM } from 'jsdom';
 const BASE_URL = 'https://bandcamp.com';
 
 export class BandCrawler {
-	async searchTracks(track: string, page: number = 1) {
+	async searchTracks(track: string, page: number = 1): Promise<SongsRecord[]> {
 		const safeTrack = encodeURIComponent(track);
 		const safePage = encodeURIComponent(page.toString());
 		const url = `${BASE_URL}/search?q=${safeTrack}&item_type=t&page=${safePage}`;
-		console.log('Searching: ', url);
 		const response = await fetch(url);
 		const text = await response.text();
 
 		const doc = new JSDOM(text);
 
-		const pages = doc.window.document.querySelectorAll('.pagelist li');
-		const lastPage = pages[pages.length - 1];
-		const lastPageNumber = lastPage?.textContent?.trim() ?? '1';
-
 		// Find result-items
 		const results = doc.window.document.querySelectorAll('.result-items .searchresult');
-		const tracks = [];
+		const tracks: SongsRecord[] = [];
 		for (const result of results) {
 			const art = result.querySelector('.art img');
 			const artSrc = art?.getAttribute('src') ?? '';
@@ -37,7 +33,7 @@ export class BandCrawler {
 				tracks.push({
 					artist: parts[0].trim(),
 					album: '',
-					track: trackName,
+					name: trackName,
 					art: artSrc,
 					url: trackUrl
 				});
@@ -45,25 +41,12 @@ export class BandCrawler {
 				tracks.push({
 					artist: parts[1].trim(),
 					album: parts[0].replace('from ', '').trim(),
-					track: trackName,
+					name: trackName,
 					art: artSrc,
 					url: trackUrl
 				});
 			}
 		}
-		console.log(tracks);
-		return {
-			tracks,
-			lastPageNumber
-		};
-	}
-
-	async getTrackStreamUrl(url: string) {
-		const response = await fetch(url);
-		const text = await response.text();
-		// Note that the text is acutally quoted
-		const regex = /"https:\/\/t4\.bcbits\.com\/stream\/.*?"/;
-		const match = text.match(regex)?.[0];
-		return match?.replace(/"/g, '') ?? '';
+		return tracks;
 	}
 }
